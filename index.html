@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess Who? 1v1 Minigame</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-p1-dark: #3b0707;
+            --bg-p1-light: #7f1d1d;
+            --p1-accent: #ef4444;
+            --bg-p2-dark: #091e42;
+            --bg-p2-light: #1e3a8a;
+            --p2-accent: #3b82f6;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            color: #f8f9fa;
+            transition: background-color 0.5s ease;
+            background-color: #111827;
+            overflow-x: hidden;
+        }
+
+        body.theme-p1 {
+            background: linear-gradient(135deg, var(--bg-p1-dark) 0%, var(--bg-p1-light) 100%);
+        }
+
+        body.theme-p2 {
+            background: linear-gradient(135deg, var(--bg-p2-dark) 0%, var(--bg-p2-light) 100%);
+        }
+
+        .game-header {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .player-banner {
+            padding: 10px 16px;
+            font-weight: 800;
+            font-size: 1.25rem;
+            letter-spacing: 1px;
+            border-radius: 12px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            text-transform: uppercase;
+        }
+
+        .player-banner-p1 {
+            background: linear-gradient(90deg, #dc2626, #ef4444);
+            border: 2px solid #fca5a5;
+        }
+
+        .player-banner-p2 {
+            background: linear-gradient(90deg, #2563eb, #3b82f6);
+            border: 2px solid #93c5fd;
+        }
+
+        .player-banner-setup {
+            background: linear-gradient(90deg, #7c3aed, #a855f7);
+            border: 2px solid #ddd6fe;
+        }
+
+        /* 3D Flip Card Container & Touch Target */
+        .character-card-wrapper {
+            perspective: 1000px;
+            height: 145px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        @media (min-width: 576px) {
+            .character-card-wrapper {
+                height: 175px;
+            }
+        }
+
+        .character-card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1);
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        .character-card.eliminated {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px;
+        }
+
+        .card-front {
+            background: rgba(17, 24, 39, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .avatar-box {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: #1f2937;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #f59e0b;
+            overflow: hidden;
+            margin-top: 2px;
+        }
+
+        @media (min-width: 576px) {
+            .avatar-box {
+                width: 80px;
+                height: 80px;
+                border-width: 3px;
+            }
+        }
+
+        .avatar-box svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .character-name {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #ffffff;
+            margin: 2px 0 0 0;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            text-align: center;
+        }
+
+        @media (min-width: 576px) {
+            .character-name {
+                font-size: 1rem;
+            }
+        }
+
+        .badge-attr {
+            font-size: 0.55rem;
+            background: rgba(255, 255, 255, 0.15);
+            color: #e5e7eb;
+            border-radius: 4px;
+            padding: 1px 4px;
+        }
+
+        @media (min-width: 576px) {
+            .badge-attr {
+                font-size: 0.65rem;
+                padding: 2px 6px;
+            }
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, #1f1f1f 0%, #111111 100%);
+            border: 2px solid #6b7280;
+            transform: rotateY(180deg);
+            justify-content: center;
+            color: #9ca3af;
+        }
+
+        .card-back i {
+            font-size: 2rem;
+            margin-bottom: 4px;
+        }
+
+        .card-back span {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            font-size: 0.7rem;
+        }
+
+        /* Panel Styling */
+        .panel-box {
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 16px;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #f59e0b;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+        }
+
+        .response-log {
+            max-height: 150px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-entry {
+            font-size: 0.8rem;
+            padding: 6px 8px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+        }
+
+        .log-entry.question {
+            background: rgba(245, 158, 11, 0.15);
+            border-left: 3px solid #f59e0b;
+            color: #fbbf24;
+        }
+
+        .log-entry.answer-yes {
+            background: rgba(16, 185, 129, 0.2);
+            border-left: 3px solid #10b981;
+            color: #34d399;
+            font-weight: 700;
+        }
+
+        .log-entry.answer-no {
+            background: rgba(239, 68, 68, 0.2);
+            border-left: 3px solid #ef4444;
+            color: #f87171;
+            font-weight: 700;
+        }
+
+        .privacy-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(3, 7, 18, 0.96);
+            backdrop-filter: blur(20px);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .privacy-card {
+            background: #111827;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 30px 20px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        }
+
+        .modal-content {
+            background: #111827;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 16px;
+        }
+    </style>
+</head>
+<body class="theme-p1">
+
+    <!-- Privacy Device Switch Modal Overlay -->
+    <div id="privacyOverlay" class="privacy-overlay" style="display: none;">
+        <div class="privacy-card">
+            <div class="mb-3">
+                <i class="fa-solid fa-user-secret text-warning display-2"></i>
+            </div>
+            <h2 class="h4 fw-bold mb-2" id="privacyTitle">PASS DEVICE TO PLAYER 2</h2>
+            <p class="text-secondary small mb-4" id="privacySub">Ensure your opponent cannot see the screen before revealing!</p>
+            <button class="btn btn-warning btn-lg rounded-pill px-4 fw-bold w-100" id="privacyReadyBtn">
+                <i class="fa-solid fa-eye me-2"></i>I am Player 2 - Ready!
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="game-header py-2 mb-3">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-warning p-2 text-dark fw-bold d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                    <i class="fa-solid fa-masks-theater fs-6"></i>
+                </div>
+                <div>
+                    <h1 class="h6 mb-0 fw-bold">GUESS WHO? 1v1</h1>
+                    <small class="text-secondary" style="font-size: 0.7rem;" id="gamePhaseStatus">Setup Phase: Player 1</small>
+                </div>
+            </div>
+            
+            <button class="btn btn-sm btn-outline-light rounded-pill px-3" id="restartBtn">
+                <i class="fa-solid fa-rotate-right me-1"></i>Reset
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container mb-4">
+        
+        <!-- Big Player Turn Header Banner -->
+        <div class="text-center mb-3">
+            <div class="player-banner player-banner-setup" id="playerTurnBanner">
+                <i class="fa-solid fa-user-gear me-2"></i>SETUP: PLAYER 1 PICK SECRET
+            </div>
+        </div>
+
+        <div class="row g-3">
+            
+            <!-- Cards Grid (Fluid Responsive Layout) -->
+            <div class="col-12 col-lg-7 col-xl-8">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h2 class="h6 mb-0 font-weight-bold text-light">
+                        <i class="fa-solid fa-users me-2 text-warning"></i>Your Board
+                        <span class="badge bg-dark border border-secondary ms-2" id="remainingCount">16 Active</span>
+                    </h2>
+                    <small class="text-secondary" style="font-size: 0.75rem;"><i class="fa-solid fa-hand-pointer me-1"></i>Tap card to set down</small>
+                </div>
+                
+                <div class="row row-cols-3 row-cols-sm-4 row-cols-md-4 g-2" id="characterGrid">
+                    <!-- 16 Character Cards Dynamically Rendered -->
+                </div>
+            </div>
+
+            <!-- Controls Panel -->
+            <div class="col-12 col-lg-5 col-xl-4">
+                <div class="panel-box d-flex flex-column gap-3">
+                    
+                    <!-- Stats Counter -->
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-value" id="turnCount">1</div>
+                                <div class="stat-label">Round</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-value" id="remainingCardsStat">16</div>
+                                <div class="stat-label">Remaining</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Secret Character Selection (Setup Phase) -->
+                    <div id="setupSection" class="p-3 bg-dark bg-opacity-50 rounded-3 border border-secondary text-center">
+                        <h3 class="h6 fw-bold text-warning mb-2"><i class="fa-solid fa-lock me-2"></i>Choose Secret Target</h3>
+                        <p class="small text-secondary mb-3" id="setupInstruction">Tap any character card on the board to choose your secret target, then click Lock Choice.</p>
+                        <button class="btn btn-success w-100 fw-bold py-2" id="lockSecretBtn" disabled>
+                            Lock Choice
+                        </button>
+                    </div>
+
+                    <!-- Gameplay Actions (Play Phase) -->
+                    <div id="playSection" style="display: none;" class="d-flex flex-column gap-3">
+                        
+                        <!-- Question Builder Section -->
+                        <div class="bg-dark bg-opacity-50 p-3 rounded-3 border border-secondary" id="questionBox">
+                            <h3 class="h6 text-uppercase fw-bold text-warning mb-2">
+                                <i class="fa-solid fa-comments me-2"></i>Ask Question (1 Per Turn)
+                            </h3>
+                            <div class="mb-2">
+                                <select class="form-select form-select-sm bg-dark text-light border-secondary mb-2" id="questionCategorySelect">
+                                    <option value="" selected disabled>-- Select Category --</option>
+                                    <option value="hairColor">Hair Color</option>
+                                    <option value="hairStyle">Hair Style</option>
+                                    <option value="gender">Gender</option>
+                                    <option value="eyeColor">Eye Color</option>
+                                    <option value="glasses">Glasses</option>
+                                    <option value="hat">Hat</option>
+                                    <option value="facialHair">Beard / Mustache</option>
+                                </select>
+                                <select class="form-select form-select-sm bg-dark text-light border-secondary mb-2" id="questionValueSelect" disabled>
+                                    <option value="" selected disabled>-- Select Trait --</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary btn-sm w-100 fw-bold py-2" id="askQuestionBtn" disabled>
+                                <i class="fa-solid fa-paper-plane me-2"></i>Ask Question
+                            </button>
+                            <small class="text-info d-none mt-2 fw-bold d-block text-center" id="questionAskedNotice">
+                                <i class="fa-solid fa-check-circle me-1"></i>You asked a question! Flip cards manually then Pass Turn.
+                            </small>
+                        </div>
+
+                        <!-- Turn Switch Button -->
+                        <button class="btn btn-warning w-100 fw-bold py-2 shadow" id="endTurnBtn">
+                            <i class="fa-solid fa-arrow-right-arrow-left me-2"></i>Pass Turn to Opponent
+                        </button>
+                        
+                        <!-- Final Guess Section -->
+                        <div class="border-top border-secondary pt-3">
+                            <h3 class="h6 text-uppercase fw-bold text-danger mb-2">
+                                <i class="fa-solid fa-bullseye me-2"></i>Make Final Guess
+                            </h3>
+                            <div class="d-flex gap-2 mb-1">
+                                <select class="form-select form-select-sm bg-dark text-light border-secondary" id="guessSelect">
+                                    <option value="" selected disabled>-- Choose Suspect --</option>
+                                </select>
+                                <button class="btn btn-danger btn-sm fw-bold px-3" id="guessBtn" disabled>
+                                    Guess!
+                                </button>
+                            </div>
+                            <small class="text-secondary" style="font-size: 0.7rem;">Wrong guess locks turn & passes to opponent!</small>
+                        </div>
+                    </div>
+
+                    <!-- Activity Log -->
+                    <div class="border-top border-secondary pt-2">
+                        <h3 class="h6 text-uppercase fw-bold text-light mb-2">
+                            <i class="fa-solid fa-clock-rotate-left me-2"></i>Turn History
+                        </h3>
+                        <div class="response-log" id="responseLog">
+                            <div class="text-secondary small text-center py-2">Game initialized. Setup starting...</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Victory Modal -->
+    <div class="modal fade" id="gameOverModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-center p-4">
+                <div class="modal-body">
+                    <div class="mb-3" id="modalIcon">
+                        <i class="fa-solid fa-trophy text-warning display-1"></i>
+                    </div>
+                    <h2 class="h3 fw-bold mb-2 text-warning" id="modalTitle">PLAYER 1 WINS!</h2>
+                    <p class="text-secondary mb-4" id="modalBody">Correctly guessed opponent's secret character!</p>
+                    
+                    <div class="row g-2 mb-4">
+                        <div class="col-6">
+                            <div class="bg-dark p-2 rounded-3 border border-secondary">
+                                <small class="text-danger d-block fw-bold mb-1">Player 1 Secret</small>
+                                <div class="avatar-box mx-auto mb-1" style="width: 55px; height: 55px;" id="p1SecretAvatar"></div>
+                                <div class="fw-bold small" id="p1SecretName">Name</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="bg-dark p-2 rounded-3 border border-secondary">
+                                <small class="text-primary d-block fw-bold mb-1">Player 2 Secret</small>
+                                <div class="avatar-box mx-auto mb-1" style="width: 55px; height: 55px;" id="p2SecretAvatar"></div>
+                                <div class="fw-bold small" id="p2SecretName">Name</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-warning btn-lg rounded-pill px-5 fw-bold" data-bs-dismiss="modal" id="modalPlayAgainBtn">
+                        Play Again
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // 16 DISTINCT CHARACTERS WITH CLEAR VISUAL HAIR AND FEATURES
+        const CHARACTERS = [
+            { id: 1, name: "Alex", gender: "Male", hairColor: "Brown", hairStyle: "short", eyeColor: "Brown", glasses: true, hat: false, facialHair: true, avatarBg: "#4a90e2", skin: "#f1c27d" },
+            { id: 2, name: "Bella", gender: "Female", hairColor: "Blonde", hairStyle: "long-wavy", eyeColor: "Blue", glasses: false, hat: false, facialHair: false, avatarBg: "#e91e63", skin: "#ffd1dc" },
+            { id: 3, name: "Charlie", gender: "Male", hairColor: "Black", hairStyle: "curly", eyeColor: "Brown", glasses: false, hat: false, facialHair: true, avatarBg: "#2ecc71", skin: "#c58c85" },
+            { id: 4, name: "Diana", gender: "Female", hairColor: "Red", hairStyle: "long", eyeColor: "Green", glasses: true, hat: false, facialHair: false, avatarBg: "#9b59b6", skin: "#f1c27d" },
+            { id: 5, name: "Ethan", gender: "Male", hairColor: "Blonde", hairStyle: "spiky", eyeColor: "Blue", glasses: true, hat: true, facialHair: false, avatarBg: "#f1c40f", skin: "#ffdbac" },
+            { id: 6, name: "Fiona", gender: "Female", hairColor: "Brown", hairStyle: "bun", eyeColor: "Brown", glasses: false, hat: false, facialHair: false, avatarBg: "#e67e22", skin: "#8d5524" },
+            { id: 7, name: "George", gender: "Male", hairColor: "Red", hairStyle: "short", eyeColor: "Blue", glasses: false, hat: true, facialHair: true, avatarBg: "#e74c3c", skin: "#ffdbac" },
+            { id: 8, name: "Hannah", gender: "Female", hairColor: "Black", hairStyle: "bob", eyeColor: "Green", glasses: true, hat: false, facialHair: false, avatarBg: "#1abc9c", skin: "#c58c85" },
+            { id: 9, name: "Ian", gender: "Male", hairColor: "Bald", hairStyle: "bald", eyeColor: "Green", glasses: false, hat: false, facialHair: true, avatarBg: "#34495e", skin: "#f1c27d" },
+            { id: 10, name: "Julia", gender: "Female", hairColor: "Blonde", hairStyle: "long-wavy", eyeColor: "Brown", glasses: true, hat: false, facialHair: false, avatarBg: "#fd79a8", skin: "#ffdbac" },
+            { id: 11, name: "Kevin", gender: "Male", hairColor: "Black", hairStyle: "spiky", eyeColor: "Blue", glasses: true, hat: false, facialHair: true, avatarBg: "#00cec9", skin: "#8d5524" },
+            { id: 12, name: "Laura", gender: "Female", hairColor: "Red", hairStyle: "curly", eyeColor: "Blue", glasses: false, hat: true, facialHair: false, avatarBg: "#6c5ce7", skin: "#ffd1dc" },
+            { id: 13, name: "Mike", gender: "Male", hairColor: "Blonde", hairStyle: "short", eyeColor: "Green", glasses: false, hat: false, facialHair: true, avatarBg: "#d63031", skin: "#f1c27d" },
+            { id: 14, name: "Nina", gender: "Female", hairColor: "Brown", hairStyle: "long", eyeColor: "Blue", glasses: true, hat: false, facialHair: false, avatarBg: "#00b894", skin: "#c58c85" },
+            { id: 15, name: "Oscar", gender: "Male", hairColor: "Gray", hairStyle: "short", eyeColor: "Brown", glasses: true, hat: true, facialHair: true, avatarBg: "#e17055", skin: "#ffdbac" },
+            { id: 16, name: "Paula", gender: "Female", hairColor: "Black", hairStyle: "afro", eyeColor: "Brown", glasses: false, hat: false, facialHair: false, avatarBg: "#a29bfe", skin: "#8d5524" }
+        ];
+
+        // GAME STATE
+        let currentPhase = 'SETUP_P1';
+        let p1Secret = null;
+        let p2Secret = null;
+        let setupSelectedId = null;
+        let activePlayer = 1;
+        let hasAskedQuestionThisTurn = false;
+        let p1BoardFlipped = new Set();
+        let p2BoardFlipped = new Set();
+        let currentTurnNum = 1;
+        let pendingNextPhase = null;
+        let gameOverModalInstance = null;
+
+        // DOM ELEMENTS
+        const bodyEl = document.body;
+        const characterGrid = document.getElementById('characterGrid');
+        const playerTurnBanner = document.getElementById('playerTurnBanner');
+        const gamePhaseStatus = document.getElementById('gamePhaseStatus');
+        const turnCountEl = document.getElementById('turnCount');
+        const remainingCardsStatEl = document.getElementById('remainingCardsStat');
+        const remainingCountBadge = document.getElementById('remainingCount');
+        const setupSection = document.getElementById('setupSection');
+        const setupInstruction = document.getElementById('setupInstruction');
+        const lockSecretBtn = document.getElementById('lockSecretBtn');
+        const playSection = document.getElementById('playSection');
+        const endTurnBtn = document.getElementById('endTurnBtn');
+        const questionCategorySelect = document.getElementById('questionCategorySelect');
+        const questionValueSelect = document.getElementById('questionValueSelect');
+        const askQuestionBtn = document.getElementById('askQuestionBtn');
+        const questionAskedNotice = document.getElementById('questionAskedNotice');
+        const guessSelect = document.getElementById('guessSelect');
+        const guessBtn = document.getElementById('guessBtn');
+        const responseLog = document.getElementById('responseLog');
+        const restartBtn = document.getElementById('restartBtn');
+        
+        const privacyOverlay = document.getElementById('privacyOverlay');
+        const privacyTitle = document.getElementById('privacyTitle');
+        const privacySub = document.getElementById('privacySub');
+        const privacyReadyBtn = document.getElementById('privacyReadyBtn');
+
+        // HIGH DISTINCTIVENESS SVG AVATAR GENERATOR
+        function generateAvatarSVG(char) {
+            const hairColors = { Brown: '#4a2e1b', Blonde: '#f59e0b', Black: '#111827', Red: '#dc2626', Gray: '#9ca3af', Bald: 'transparent' };
+            const eyeColors = { Blue: '#2563eb', Green: '#059669', Brown: '#78350f' };
+            
+            const hColor = hairColors[char.hairColor] || '#333';
+            const eColor = eyeColors[char.eyeColor] || '#333';
+
+            let hairSVG = '';
+            if (char.hairStyle === 'short') {
+                hairSVG = `<path d="M 18 38 C 18 8, 82 8, 82 38 C 75 20, 25 20, 18 38 Z" fill="${hColor}" stroke="#000" stroke-width="1.5"/>`;
+            } else if (char.hairStyle === 'spiky') {
+                hairSVG = `<path d="M 18 35 L 26 12 L 34 26 L 50 8 L 66 26 L 74 12 L 82 35 C 75 20, 25 20, 18 35 Z" fill="${hColor}" stroke="#000" stroke-width="1.5"/>`;
+            } else if (char.hairStyle === 'long-wavy' || char.hairStyle === 'long') {
+                hairSVG = `<path d="M 14 35 C 13 8, 87 8, 86 35 C 90 68, 78 88, 72 88 C 68 70, 75 38, 50 22 C 25 38, 32 70, 28 88 C 22 88, 10 68, 14 35 Z" fill="${hColor}" stroke="#000" stroke-width="1.5"/>`;
+            } else if (char.hairStyle === 'curly') {
+                hairSVG = `
+                    <circle cx="25" cy="22" r="14" fill="${hColor}"/>
+                    <circle cx="40" cy="15" r="15" fill="${hColor}"/>
+                    <circle cx="60" cy="15" r="15" fill="${hColor}"/>
+                    <circle cx="75" cy="22" r="14" fill="${hColor}"/>
+                    <circle cx="18" cy="36" r="11" fill="${hColor}"/>
+                    <circle cx="82" cy="36" r="11" fill="${hColor}"/>
+                `;
+            } else if (char.hairStyle === 'bob') {
+                hairSVG = `<path d="M 16 35 C 16 8, 84 8, 84 35 L 84 68 C 70 68, 75 35, 50 22 C 25 35, 30 68, 16 68 Z" fill="${hColor}" stroke="#000" stroke-width="1.5"/>`;
+            } else if (char.hairStyle === 'bun') {
+                hairSVG = `
+                    <circle cx="50" cy="10" r="16" fill="${hColor}" stroke="#000" stroke-width="1.5"/>
+                    <path d="M 18 38 C 18 10, 82 10, 82 38 C 75 22, 25 22, 18 38 Z" fill="${hColor}" stroke="#000" stroke-width="1.5"/>
+                `;
+            } else if (char.hairStyle === 'afro') {
+                hairSVG = `<circle cx="50" cy="38" r="40" fill="${hColor}" stroke="#000" stroke-width="2"/>`;
+            }
+
+            const glassesSVG = char.glasses ? `
+                <path d="M 23 46 L 47 46 M 53 46 L 77 46 M 47 46 L 53 46" stroke="#111" stroke-width="3"/>
+                <circle cx="35" cy="46" r="10" fill="rgba(255,255,255,0.3)" stroke="#111" stroke-width="3"/>
+                <circle cx="65" cy="46" r="10" fill="rgba(255,255,255,0.3)" stroke="#111" stroke-width="3"/>
+            ` : '';
+            
+            const hatSVG = char.hat ? `
+                <path d="M 8 32 L 92 32 L 84 26 L 16 26 Z" fill="#ef4444" stroke="#111" stroke-width="1"/>
+                <rect x="20" y="8" width="60" height="20" rx="4" fill="#dc2626" stroke="#111" stroke-width="1.5"/>
+                <rect x="20" y="23" width="60" height="5" fill="#f59e0b"/>
+            ` : '';
+
+            const beardSVG = char.facialHair ? `
+                <path d="M 28 60 Q 50 88 72 60 Q 50 92 28 60 Z" fill="${hColor === 'transparent' ? '#78350f' : hColor}" stroke="#111" stroke-width="1"/>
+                <path d="M 38 58 Q 50 64 62 58" stroke="#111" stroke-width="2" fill="none"/>
+            ` : '';
+
+            return `
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                ${hairSVG}
+                <circle cx="50" cy="52" r="29" fill="${char.skin}" stroke="#333" stroke-width="1.5"/>
+                <circle cx="36" cy="46" r="4.5" fill="#fff"/>
+                <circle cx="64" cy="46" r="4.5" fill="#fff"/>
+                <circle cx="36" cy="46" r="2.5" fill="${eColor}"/>
+                <circle cx="64" cy="46" r="2.5" fill="${eColor}"/>
+                <path d="M 40 64 Q 50 71 60 64" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+                ${beardSVG}
+                ${glassesSVG}
+                ${hatSVG}
+            </svg>`;
+        }
+
+        function initGame() {
+            currentPhase = 'SETUP_P1';
+            p1Secret = null;
+            p2Secret = null;
+            setupSelectedId = null;
+            activePlayer = 1;
+            hasAskedQuestionThisTurn = false;
+            p1BoardFlipped.clear();
+            p2BoardFlipped.clear();
+            currentTurnNum = 1;
+
+            turnCountEl.textContent = '1';
+            setupSection.style.display = 'block';
+            playSection.style.display = 'none';
+            lockSecretBtn.disabled = true;
+
+            resetTurnQuestionState();
+            applyPlayerTheme();
+            renderCards();
+            populateGuessDropdown();
+            
+            responseLog.innerHTML = '<div class="text-secondary small text-center py-2">Pass device to Player 1 to select secret character!</div>';
+        }
+
+        function resetTurnQuestionState() {
+            hasAskedQuestionThisTurn = false;
+            questionCategorySelect.disabled = false;
+            questionCategorySelect.value = '';
+            questionValueSelect.innerHTML = '<option value="" selected disabled>-- Select Trait --</option>';
+            questionValueSelect.disabled = true;
+            askQuestionBtn.disabled = true;
+            if (questionAskedNotice) questionAskedNotice.classList.add('d-none');
+            if (guessSelect) guessSelect.value = '';
+            if (guessBtn) guessBtn.disabled = true;
+        }
+
+        function applyPlayerTheme() {
+            bodyEl.className = '';
+            if (currentPhase === 'SETUP_P1') {
+                bodyEl.className = 'theme-p1';
+                playerTurnBanner.className = 'player-banner player-banner-setup';
+                playerTurnBanner.innerHTML = '<i class="fa-solid fa-user-gear me-2"></i>SETUP: PLAYER 1 PICK SECRET';
+                gamePhaseStatus.textContent = 'Setup Phase: Player 1 Selecting Target';
+            } else if (currentPhase === 'SETUP_P2') {
+                bodyEl.className = 'theme-p2';
+                playerTurnBanner.className = 'player-banner player-banner-setup';
+                playerTurnBanner.innerHTML = '<i class="fa-solid fa-user-gear me-2"></i>SETUP: PLAYER 2 PICK SECRET';
+                gamePhaseStatus.textContent = 'Setup Phase: Player 2 Selecting Target';
+            } else {
+                if (activePlayer === 1) {
+                    bodyEl.className = 'theme-p1';
+                    playerTurnBanner.className = 'player-banner player-banner-p1';
+                    playerTurnBanner.innerHTML = '<i class="fa-solid fa-user-ninja me-2"></i>PLAYER 1\'S TURN';
+                    gamePhaseStatus.textContent = `Match Active: Player 1 Turn`;
+                } else {
+                    bodyEl.className = 'theme-p2';
+                    playerTurnBanner.className = 'player-banner player-banner-p2';
+                    playerTurnBanner.innerHTML = '<i class="fa-solid fa-user-astronaut me-2"></i>PLAYER 2\'S TURN';
+                    gamePhaseStatus.textContent = `Match Active: Player 2 Turn`;
+                }
+            }
+            updateRemainingCount();
+        }
+
+        function triggerPrivacyScreen(nextPhase, targetPlayer) {
+            pendingNextPhase = nextPhase;
+            privacyTitle.textContent = `PASS DEVICE TO PLAYER ${targetPlayer}`;
+            privacySub.textContent = `Ensure Player ${targetPlayer === 1 ? 2 : 1} cannot see the screen before continuing!`;
+            
+            if (targetPlayer === 1) {
+                privacyReadyBtn.className = 'btn btn-danger btn-lg rounded-pill px-4 fw-bold w-100';
+            } else {
+                privacyReadyBtn.className = 'btn btn-primary btn-lg rounded-pill px-4 fw-bold w-100';
+            }
+            privacyReadyBtn.innerHTML = `<i class="fa-solid fa-eye me-2"></i>I am Player ${targetPlayer} - Ready!`;
+
+            privacyOverlay.style.display = 'flex';
+        }
+
+        privacyReadyBtn.addEventListener('click', () => {
+            privacyOverlay.style.display = 'none';
+
+            if (pendingNextPhase === 'SETUP_P2') {
+                currentPhase = 'SETUP_P2';
+                setupSelectedId = null;
+                lockSecretBtn.disabled = true;
+                setupInstruction.textContent = "Player 2: Tap a character card to select your secret pick, then lock choice!";
+                applyPlayerTheme();
+                renderCards();
+            } else if (pendingNextPhase === 'PLAYING_START') {
+                currentPhase = 'PLAYING';
+                setupSection.style.display = 'none';
+                playSection.style.display = 'flex';
+                activePlayer = 1;
+                resetTurnQuestionState();
+                applyPlayerTheme();
+                renderCards();
+            } else if (pendingNextPhase === 'NEXT_TURN') {
+                activePlayer = activePlayer === 1 ? 2 : 1;
+                if (activePlayer === 1) {
+                    currentTurnNum++;
+                    turnCountEl.textContent = currentTurnNum;
+                }
+                resetTurnQuestionState();
+                addLogEntry(`--- Switched to Player ${activePlayer}'s Turn ---`, 'question');
+                applyPlayerTheme();
+                renderCards();
+            }
+        });
+
+        function renderCards() {
+            characterGrid.innerHTML = '';
+            const activeFlippedSet = (activePlayer === 1) ? p1BoardFlipped : p2BoardFlipped;
+
+            CHARACTERS.forEach(char => {
+                const col = document.createElement('div');
+                col.className = 'col';
+
+                let isFlipped = false;
+                let isSelectedForSetup = false;
+
+                if (currentPhase.startsWith('SETUP')) {
+                    isSelectedForSetup = (setupSelectedId === char.id);
+                } else {
+                    isFlipped = activeFlippedSet.has(char.id);
+                }
+
+                col.innerHTML = `
+                    <div class="character-card-wrapper" data-id="${char.id}">
+                        <div class="character-card ${isFlipped ? 'eliminated' : ''}">
+                            <div class="card-front" style="${isSelectedForSetup ? 'border: 3px solid #f59e0b; box-shadow: 0 0 15px #f59e0b;' : ''}">
+                                <div class="avatar-box" style="background: ${char.avatarBg}">
+                                    ${generateAvatarSVG(char)}
+                                </div>
+                                <div class="character-name">${char.name}</div>
+                                <div class="d-flex gap-1">
+                                    <span class="badge-attr">${char.hairColor}</span>
+                                    <span class="badge-attr">${char.glasses ? 'Glasses' : 'No Spec'}</span>
+                                </div>
+                            </div>
+                            <div class="card-back">
+                                <i class="fa-solid fa-user-slash"></i>
+                                <span>SET DOWN</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                const wrapper = col.querySelector('.character-card-wrapper');
+                wrapper.addEventListener('click', () => handleCardClick(char.id));
+
+                characterGrid.appendChild(col);
+            });
+        }
+
+        function handleCardClick(id) {
+            if (currentPhase === 'SETUP_P1' || currentPhase === 'SETUP_P2') {
+                setupSelectedId = id;
+                lockSecretBtn.disabled = false;
+                renderCards();
+            } else {
+                const activeFlippedSet = (activePlayer === 1) ? p1BoardFlipped : p2BoardFlipped;
+                if (activeFlippedSet.has(id)) {
+                    activeFlippedSet.delete(id);
+                } else {
+                    activeFlippedSet.add(id);
+                }
+                renderCards();
+                updateRemainingCount();
+            }
+        }
+
+        lockSecretBtn.addEventListener('click', () => {
+            if (!setupSelectedId) return;
+            const selectedChar = CHARACTERS.find(c => c.id === setupSelectedId);
+
+            if (currentPhase === 'SETUP_P1') {
+                p1Secret = selectedChar;
+                addLogEntry(`Player 1 locked in secret pick!`, 'question');
+                triggerPrivacyScreen('SETUP_P2', 2);
+            } else if (currentPhase === 'SETUP_P2') {
+                p2Secret = selectedChar;
+                addLogEntry(`Player 2 locked in secret pick! Match starting...`, 'question');
+                triggerPrivacyScreen('PLAYING_START', 1);
+            }
+        });
+
+        questionCategorySelect.addEventListener('change', () => {
+            if (hasAskedQuestionThisTurn) return;
+
+            const cat = questionCategorySelect.value;
+            questionValueSelect.innerHTML = '<option value="" selected disabled>-- Select Trait --</option>';
+            questionValueSelect.disabled = !cat;
+            askQuestionBtn.disabled = true;
+
+            if (!cat) return;
+
+            let values = [];
+            if (cat === 'hairColor') values = ['Brown', 'Blonde', 'Black', 'Red', 'Gray', 'Bald'];
+            else if (cat === 'hairStyle') values = ['short', 'spiky', 'long-wavy', 'long', 'curly', 'bob', 'bun', 'afro', 'bald'];
+            else if (cat === 'gender') values = ['Male', 'Female'];
+            else if (cat === 'eyeColor') values = ['Blue', 'Green', 'Brown'];
+            else if (cat === 'glasses') values = ['Yes', 'No'];
+            else if (cat === 'hat') values = ['Yes', 'No'];
+            else if (cat === 'facialHair') values = ['Yes', 'No'];
+
+            values.forEach(val => {
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.textContent = (cat === 'glasses' || cat === 'hat' || cat === 'facialHair') ? (val === 'Yes' ? `Has ${cat}` : `No ${cat}`) : val;
+                questionValueSelect.appendChild(opt);
+            });
+        });
+
+        questionValueSelect.addEventListener('change', () => {
+            if (hasAskedQuestionThisTurn) return;
+            askQuestionBtn.disabled = !questionValueSelect.value;
+        });
+
+        askQuestionBtn.addEventListener('click', () => {
+            if (hasAskedQuestionThisTurn) return;
+
+            const cat = questionCategorySelect.value;
+            const val = questionValueSelect.value;
+            if (!cat || !val) return;
+
+            const opponentSecret = (activePlayer === 1) ? p2Secret : p1Secret;
+            let answer = false;
+
+            if (cat === 'glasses' || cat === 'hat' || cat === 'facialHair') {
+                const targetBool = (val === 'Yes');
+                answer = (opponentSecret[cat] === targetBool);
+            } else {
+                answer = (opponentSecret[cat].toString().toLowerCase() === val.toString().toLowerCase());
+            }
+
+            const catLabel = questionCategorySelect.options[questionCategorySelect.selectedIndex].text;
+            const valLabel = questionValueSelect.options[questionValueSelect.selectedIndex].text;
+            
+            addLogEntry(`P${activePlayer} asked: ${catLabel} = ${valLabel}?`, 'question');
+            
+            if (answer) {
+                addLogEntry(`ANSWER: YES! Opponent HAS ${valLabel}`, 'answer-yes');
+            } else {
+                addLogEntry(`ANSWER: NO! Opponent DOES NOT have ${valLabel}`, 'answer-no');
+            }
+
+            hasAskedQuestionThisTurn = true;
+            questionCategorySelect.disabled = true;
+            questionValueSelect.disabled = true;
+            askQuestionBtn.disabled = true;
+            if (questionAskedNotice) questionAskedNotice.classList.remove('d-none');
+        });
+
+        endTurnBtn.addEventListener('click', () => {
+            const nextPlayer = activePlayer === 1 ? 2 : 1;
+            triggerPrivacyScreen('NEXT_TURN', nextPlayer);
+        });
+
+        function updateRemainingCount() {
+            if (currentPhase.startsWith('SETUP')) {
+                remainingCardsStatEl.textContent = '16';
+                remainingCountBadge.textContent = '16 Active';
+                return;
+            }
+            const activeFlippedSet = (activePlayer === 1) ? p1BoardFlipped : p2BoardFlipped;
+            const remaining = CHARACTERS.length - activeFlippedSet.size;
+            remainingCardsStatEl.textContent = remaining;
+            remainingCountBadge.textContent = `${remaining} Active`;
+        }
+
+        function populateGuessDropdown() {
+            guessSelect.innerHTML = '<option value="" selected disabled>-- Choose Suspect --</option>';
+            CHARACTERS.forEach(char => {
+                const option = document.createElement('option');
+                option.value = char.id;
+                option.textContent = char.name;
+                guessSelect.appendChild(option);
+            });
+        }
+
+        guessSelect.addEventListener('change', () => {
+            guessBtn.disabled = !guessSelect.value;
+        });
+
+        guessBtn.addEventListener('click', () => {
+            const guessedId = parseInt(guessSelect.value, 10);
+            if (!guessedId) return;
+
+            const targetOpponentSecret = (activePlayer === 1) ? p2Secret : p1Secret;
+            const guessedChar = CHARACTERS.find(c => c.id === guessedId);
+
+            if (guessedId === targetOpponentSecret.id) {
+                endGame(activePlayer, true);
+            } else {
+                addLogEntry(`P${activePlayer} guessed ${guessedChar.name} - WRONG GUESS!`, 'answer-no');
+                const nextPlayer = activePlayer === 1 ? 2 : 1;
+                triggerPrivacyScreen('NEXT_TURN', nextPlayer);
+            }
+        });
+
+        function addLogEntry(text, type) {
+            if (responseLog.children[0]?.classList.contains('text-secondary')) {
+                responseLog.innerHTML = '';
+            }
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = text;
+            responseLog.appendChild(entry);
+            responseLog.scrollTop = responseLog.scrollHeight;
+        }
+
+        function endGame(winnerPlayer, isDirectHit) {
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            const modalIcon = document.getElementById('modalIcon');
+            const p1Avatar = document.getElementById('p1SecretAvatar');
+            const p1Name = document.getElementById('p1SecretName');
+            const p2Avatar = document.getElementById('p2SecretAvatar');
+            const p2Name = document.getElementById('p2SecretName');
+
+            p1Avatar.style.background = p1Secret.avatarBg;
+            p1Avatar.innerHTML = generateAvatarSVG(p1Secret);
+            p1Name.textContent = p1Secret.name;
+
+            p2Avatar.style.background = p2Secret.avatarBg;
+            p2Avatar.innerHTML = generateAvatarSVG(p2Secret);
+            p2Name.textContent = p2Secret.name;
+
+            modalIcon.innerHTML = '<i class="fa-solid fa-trophy text-warning display-1"></i>';
+            modalTitle.textContent = `PLAYER ${winnerPlayer} WINS!`;
+            modalBody.textContent = `Player ${winnerPlayer} correctly guessed their opponent's secret character!`;
+
+            if (!gameOverModalInstance) {
+                gameOverModalInstance = new bootstrap.Modal(document.getElementById('gameOverModal'));
+            }
+            gameOverModalInstance.show();
+        }
+
+        restartBtn.addEventListener('click', initGame);
+        document.getElementById('modalPlayAgainBtn').addEventListener('click', initGame);
+
+        window.onload = () => {
+            initGame();
+        };
+    </script>
+</body>
+</html>
